@@ -23,36 +23,32 @@ app.post('/api/leads', async (req, res) => {
         }
 
         // 1. Save to Google Sheets (checks for duplicates internally)
-        try {
-            const sheetResult = await addLeadToSheet({ name, businessEmail });
+        const sheetResult = await addLeadToSheet({ name, businessEmail });
 
-            if (sheetResult.status === 'duplicate') {
-                // If duplicate, we just return success to frontend but don't send a new email
-                return res.status(200).json({
-                    message: 'Lead already registered',
-                    lead: { name, businessEmail, createdAt: new Date() },
-                    isDuplicate: true
-                });
-            }
-
-            // 2. Send email only for new leads
-            await sendLeadNotification({ name, businessEmail }).catch(emailError => {
-                console.error('Failed to send email notification:', emailError);
+        if (sheetResult.status === 'duplicate') {
+            return res.status(200).json({
+                message: 'Lead already registered',
+                lead: { name, businessEmail, createdAt: new Date() },
+                isDuplicate: true
             });
-
-        } catch (error) {
-            console.error('Capture operation failed:', error);
-            return res.status(500).json({ message: 'Failed to capture lead data' });
         }
 
+        // 2. Send response immediately — don't make user wait for email
         res.status(201).json({
             message: 'Lead captured successfully',
             lead: { name, businessEmail, createdAt: new Date() }
         });
 
+        // 3. Send email notification in the background (fire-and-forget)
+        sendLeadNotification({ name, businessEmail }).catch(emailError => {
+            console.error('Failed to send email notification:', emailError);
+        });
+
     } catch (error) {
         console.error('Error capturing lead:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        if (!res.headersSent) {
+            res.status(500).json({ message: 'Internal server error' });
+        }
     }
 });
 
