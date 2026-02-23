@@ -25,3 +25,7 @@ Thumbs.db
 # Production build (if applicable)
 dist/
 build/
+
+# service-account.json
+service-key.json
+.env
