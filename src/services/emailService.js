@@ -13,7 +13,6 @@ const brevo = new BrevoClient({
 const sendLeadNotification = async (leadData) => {
     try {
         console.log(`Attempting to send notification for: ${leadData.name} <${leadData.businessEmail}>`);
-        console.log(`Recipients from ENV: ${process.env.DUMMY_EMAIL_1}, ${process.env.DUMMY_EMAIL_2}`);
 
         const result = await brevo.transactionalEmails.sendTransacEmail({
             subject: `🚀 New Lead Captured: ${leadData.name}`,
